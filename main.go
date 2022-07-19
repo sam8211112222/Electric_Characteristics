@@ -3,43 +3,52 @@ package main
 import (
 	"Electric_Characteristics/config"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
+	defer CloseClientDB(mongoConnection, ctx)
 
-	var err error
+	//dataCollection := returnCollection(mongoConnection, config.SpiceDB, config.DataTable)
 
-	fd := returnExcelData(config.FilePath, config.SheetIndex)
-
-	mongo, ctx, err := connectToMongo(config.Uri, &config.Cred, config.MongoClient)
-
-	defer CloseClientDB(mongo, ctx)
-
-	dataCollection := returnCollection(mongo, config.SpiceDB, config.DataTable)
-
-	// truncate data
-	dropCollection(dataCollection, ctx)
+	// truncate data if need
+	dropCollection(mongoConnection, config.SpiceDB, config.DataTable, ctx)
 
 	// insert data
-	res := insertOne(dataCollection, ctx, fd)
-	id := res.InsertedID
-
-	// select data
-	t := Fulldata{}
-	if err = findOne(dataCollection, ctx, id).Decode(&t); err != nil {
+	_, err := insertData(mongoConnection, config.SpiceDB, config.DataTable, ctx, fd)
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Fatal(http.ListenAndServe(":8080", t))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = config.DefaultPort
+	}
+
+	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/search/{id}", getOneData).Methods("GET")
+	log.Fatal(http.ListenAndServe(":"+config.DefaultPort, router))
 
 }
 
-func (fd Fulldata) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func getOneData(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	queryId := vars["id"] //獲取url參數
+	result, err := findDataById(mongoConnection, config.SpiceDB, config.DataTable, queryId)
+	if err != nil {
+		log.Fatal(err)
+	}
+	t := &Fulldata{}
+	err = result.Decode(t)
+	if err != nil {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	err := json.NewEncoder(w).Encode(fd)
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(t)
 	if err != nil {
 		return
 	}

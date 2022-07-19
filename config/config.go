@@ -16,6 +16,8 @@ var Cred = options.Credential{AuthSource: "admin", Username: "root", Password: "
 const FilePath = "/Users/user/Documents/Polite_request/Electric Characteristics Table & Graphics - Part Number A767KN186M1HLAE050.xlsx"
 const SheetIndex = 0
 
+const DefaultPort = "8081"
+
 //cred := options.Credential{
 //AuthSource: "admin",
 //Username:   "root",

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Electric_Characteristics/config"
 	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,6 +12,8 @@ import (
 )
 
 var err error
+var mongoConnection, ctx, _ = connectToMongo(config.Uri, &config.Cred, config.MongoClient)
+var fd = returnExcelData(config.FilePath, config.SheetIndex)
 
 func connectToMongo(uri string, cred *options.Credential, MongoClient *mongo.Client) (*mongo.Client, context.Context, error) {
 	MongoClient, err = mongo.NewClient(options.Client().ApplyURI(uri).SetAuth(*cred))
@@ -34,28 +37,6 @@ func returnCollection(connection *mongo.Client, tableName string, collectionName
 	return connection.Database(tableName).Collection(collectionName)
 }
 
-func dropCollection(collection *mongo.Collection, ctx context.Context) {
-	if err := collection.Drop(ctx); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func insertOne(collection *mongo.Collection, ctx context.Context, document interface{}) *mongo.InsertOneResult {
-	res, err := collection.InsertOne(ctx, document)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return res
-}
-
-func findOne(collection *mongo.Collection, ctx context.Context, id interface{}) *mongo.SingleResult {
-	result := collection.FindOne(ctx, bson.M{"_id": id})
-	if err != nil {
-		log.Fatal(err)
-	}
-	return result
-}
-
 func CloseClientDB(MongoClient *mongo.Client, ctx context.Context) {
 	if MongoClient == nil {
 		return
@@ -68,4 +49,29 @@ func CloseClientDB(MongoClient *mongo.Client, ctx context.Context) {
 
 	// TODO optional you can log your closed MongoDB client
 	fmt.Println("Connection to MongoDB closed.")
+}
+
+func dropCollection(connection *mongo.Client, tableName string, collectionName string, ctx context.Context) {
+	dataCollection := returnCollection(connection, tableName, collectionName)
+	if err := dataCollection.Drop(ctx); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func findDataById(connection *mongo.Client, tableName string, collectionName string, id interface{}) (*mongo.SingleResult, error) {
+	dataCollection := returnCollection(connection, tableName, collectionName)
+	result := dataCollection.FindOne(ctx, bson.M{"_id": id})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func insertData(connection *mongo.Client, tableName string, collectionName string, ctx context.Context, document interface{}) (*mongo.InsertOneResult, error) {
+	dataCollection := returnCollection(connection, tableName, collectionName)
+	res, err := dataCollection.InsertOne(ctx, document)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
