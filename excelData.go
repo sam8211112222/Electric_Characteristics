@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/xuri/excelize/v2"
+	"log"
 )
 
 type Fulldata struct {
@@ -28,12 +28,12 @@ func returnExcelData(filePath string, sheetIndex int) Fulldata {
 	// Get all the rows in the Sheet1.
 	rows, err := f.GetRows(sheetName)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 	defer func() {
 		// Close the spreadsheet.
 		if err := f.Close(); err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		}
 	}()
 	return mappingColumn(rows)
@@ -42,7 +42,7 @@ func returnExcelData(filePath string, sheetIndex int) Fulldata {
 func openExcel(filePath string, sheetIndex int) (*excelize.File, string) {
 	f, err := excelize.OpenFile(filePath)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
 	// 取得sheet name

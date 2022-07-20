@@ -3,7 +3,6 @@ package main
 import (
 	"Electric_Characteristics/config"
 	"context"
-	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -11,11 +10,13 @@ import (
 	"log"
 )
 
-var err error
 var mongoConnection, ctx, _ = connectToMongo(config.Uri, &config.Cred, config.MongoClient)
 var fd = returnExcelData(config.FilePath, config.SheetIndex)
 
 func connectToMongo(uri string, cred *options.Credential, MongoClient *mongo.Client) (*mongo.Client, context.Context, error) {
+
+	var err error
+
 	MongoClient, err = mongo.NewClient(options.Client().ApplyURI(uri).SetAuth(*cred))
 	if err != nil {
 		log.Fatal(err)
@@ -27,7 +28,7 @@ func connectToMongo(uri string, cred *options.Credential, MongoClient *mongo.Cli
 	}
 	err = MongoClient.Ping(ctx, readpref.Primary())
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 
 	return MongoClient, ctx, err
@@ -48,7 +49,7 @@ func CloseClientDB(MongoClient *mongo.Client, ctx context.Context) {
 	}
 
 	// TODO optional you can log your closed MongoDB client
-	fmt.Println("Connection to MongoDB closed.")
+	log.Fatal("Connection to MongoDB closed.")
 }
 
 func dropCollection(connection *mongo.Client, tableName string, collectionName string, ctx context.Context) {
@@ -61,8 +62,9 @@ func dropCollection(connection *mongo.Client, tableName string, collectionName s
 func findDataById(connection *mongo.Client, tableName string, collectionName string, id interface{}) (*mongo.SingleResult, error) {
 	dataCollection := returnCollection(connection, tableName, collectionName)
 	result := dataCollection.FindOne(ctx, bson.M{"_id": id})
-	if err != nil {
-		return nil, err
+	if result.Err() != nil {
+		log.Fatal(result.Err())
+		return nil, result.Err()
 	}
 	return result, nil
 }
@@ -71,6 +73,7 @@ func insertData(connection *mongo.Client, tableName string, collectionName strin
 	dataCollection := returnCollection(connection, tableName, collectionName)
 	res, err := dataCollection.InsertOne(ctx, document)
 	if err != nil {
+		log.Fatal(err)
 		return nil, err
 	}
 	return res, nil

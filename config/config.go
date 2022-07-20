@@ -17,9 +17,3 @@ const FilePath = "/Users/user/Documents/Polite_request/Electric Characteristics 
 const SheetIndex = 0
 
 const DefaultPort = "8081"
-
-//cred := options.Credential{
-//AuthSource: "admin",
-//Username:   "root",
-//Password:   "root",
-//}

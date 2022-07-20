@@ -12,8 +12,6 @@ import (
 func main() {
 	defer CloseClientDB(mongoConnection, ctx)
 
-	//dataCollection := returnCollection(mongoConnection, config.SpiceDB, config.DataTable)
-
 	// truncate data if need
 	dropCollection(mongoConnection, config.SpiceDB, config.DataTable, ctx)
 

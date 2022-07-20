@@ -101,7 +101,7 @@ func TestFindDataById(t *testing.T) {
 			fd := &Fulldata{}
 			err = actual.Decode(fd)
 			if err != nil {
-				return
+				t.Fail()
 			}
 
 			if fd.Part_number != tt.want.Part_number {
